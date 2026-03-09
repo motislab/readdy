@@ -173,6 +173,20 @@ if (!orderColumns.includes('pickup_location')) {
   db.exec("ALTER TABLE orders ADD COLUMN pickup_location TEXT");
 }
 
+const categoryInfo = db.prepare("PRAGMA table_info(categories)").all() as any[];
+const categoryColumns = categoryInfo.map(info => info.name);
+if (!categoryColumns.includes('emoji')) {
+  db.exec("ALTER TABLE categories ADD COLUMN emoji TEXT DEFAULT '✨'");
+  // Set default emojis for existing categories
+  db.exec(`
+    UPDATE categories SET emoji = '🎨' WHERE title = 'Anime';
+    UPDATE categories SET emoji = '💻' WHERE title = 'Tech';
+    UPDATE categories SET emoji = '😂' WHERE title = 'Memes';
+    UPDATE categories SET emoji = '✨' WHERE title = 'Minimalist';
+    UPDATE categories SET emoji = '🎓' WHERE title = 'Campus Life';
+  `);
+}
+
 // Seed initial data if empty
 const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
 if (userCount.count === 0) {

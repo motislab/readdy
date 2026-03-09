@@ -156,7 +156,7 @@ const Navbar = ({ user, onLogout }: { user: User | null, onLogout: () => void })
     { name: 'Browse', path: '/explore', icon: Search },
     { name: 'Resellers', path: '/mega-builder', icon: Zap },
     { name: 'Rules and Regulations', path: '/rules', icon: Users },
-    { name: 'Referrals', path: '/dashboard', icon: DollarSign },
+    { name: 'Referrals', path: '/dashboard#referrals', icon: DollarSign },
   ];
 
   return (
@@ -288,18 +288,19 @@ const Navbar = ({ user, onLogout }: { user: User | null, onLogout: () => void })
 
 const Home = () => {
   const [trending, setTrending] = useState<Sticker[]>([]);
+  const [topCategories, setTopCategories] = useState<any[]>([]);
   const [marqueeText, setMarqueeText] = useState('Limited Edition • Vibe Only • Premium Quality • Custom Designs • Fast Delivery');
 
   useEffect(() => {
-    apiFetch('/api/stickers/trending')
-      .then(data => setTrending(data.slice(0, 8)))
-      .catch(err => console.error('Failed to load trending stickers:', err));
-    
-    apiFetch('/api/settings')
-      .then(data => {
-        if (data.marquee_text) setMarqueeText(data.marquee_text);
-      })
-      .catch(err => console.error('Failed to load settings:', err));
+    Promise.all([
+      apiFetch('/api/stickers/trending'),
+      apiFetch('/api/categories/top'),
+      apiFetch('/api/settings')
+    ]).then(([trendingData, categoriesData, settingsData]) => {
+      setTrending(trendingData.slice(0, 8));
+      setTopCategories(categoriesData);
+      if (settingsData.marquee_text) setMarqueeText(settingsData.marquee_text);
+    }).catch(err => console.error('Failed to load home page data:', err));
   }, []);
 
   const packs = [
@@ -334,7 +335,7 @@ const Home = () => {
           className="relative z-10 max-w-4xl"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-foreground/5 border border-border text-primary text-xs font-bold uppercase tracking-widest mb-8">
-            <Sparkles className="w-3 h-3" /> Welcome to Vibe Stickers
+            <img src="https://res.cloudinary.com/dd4fid5mp/image/upload/v1772727101/Gemini_Generated_Image_hwbqv2hwbqv2hwbq_mgdd19.png" className="w-5 h-5" alt="" /> Welcome to Vibe Stickers
           </div>
           
           <h1 className="text-5xl md:text-8xl font-bold tracking-tight text-foreground mb-8 leading-[1.1]">
@@ -348,12 +349,12 @@ const Home = () => {
           
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/explore">
-              <button className="px-8 py-4 bg-primary text-primary-foreground rounded-xl font-bold text-lg hover:scale-105 transition-all neon-pink-glow">
+              <button className="px-8 py-4 bg-primary text-primary-foreground rounded-xl font-bold text-lg hover:scale-105 hover:shadow-2xl active:scale-95 transition-all neon-pink-glow">
                 Browse Collection
               </button>
             </Link>
             <Link to="/mega-builder">
-              <button className="px-8 py-4 bg-foreground/5 text-foreground border border-border rounded-xl font-bold text-lg hover:bg-foreground/10 transition-all">
+              <button className="px-8 py-4 bg-foreground/5 text-foreground border border-border rounded-xl font-bold text-lg hover:bg-foreground/10 hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
                 Build Mega Pack
               </button>
             </Link>
@@ -377,16 +378,16 @@ const Home = () => {
       </section>
 
       {/* Marquee */}
-      <div className="border-y border-border bg-foreground/[0.02] py-8 overflow-hidden">
+      <div className="border-y border-border bg-foreground/[0.02] py-4 overflow-hidden">
         <div className="flex whitespace-nowrap animate-marquee">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="flex items-center gap-12 px-6">
               {marqueeText.split('•').map((part, idx) => (
                 <div key={idx} className="flex items-center gap-12">
-                  <span className="text-2xl md:text-4xl font-bold uppercase tracking-tighter text-foreground/40">
+                  <span className="text-lg md:text-2xl font-bold uppercase tracking-tighter text-foreground/40">
                     {part.trim()}
                   </span>
-                  <Sparkles className="w-6 h-6 text-primary/40" />
+                  <img src="https://res.cloudinary.com/dd4fid5mp/image/upload/v1772727101/Gemini_Generated_Image_hwbqv2hwbqv2hwbq_mgdd19.png" className="w-5 h-5" alt="" />
                 </div>
               ))}
             </div>
@@ -397,29 +398,28 @@ const Home = () => {
       {/* Categories Section */}
       <section className="max-w-7xl mx-auto px-6 py-24 border-b border-border">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { name: 'Cute & Kawaii', icon: '✨', color: 'from-pink-500/10' },
-            { name: 'Gaming & Tech', icon: '🎮', color: 'from-blue-500/10' },
-            { name: 'Sci-Fi & Space', icon: '🚀', color: 'from-purple-500/10' },
-            { name: 'Food & Drinks', icon: '🍕', color: 'from-orange-500/10' },
-          ].map((cat, i) => (
-            <Link 
-              key={i} 
-              to={`/explore?category=${i + 1}`}
-              className={cn(
-                "group relative p-8 rounded-3xl glass overflow-hidden transition-all duration-300 hover:scale-[1.02]",
-                "bg-gradient-to-br to-transparent",
-                cat.color
-              )}
-            >
-              <div className="text-4xl mb-4">{cat.icon}</div>
-              <h3 className="text-xl font-bold text-foreground mb-1">{cat.name}</h3>
-              <p className="text-foreground/40 text-sm">Explore Collection</p>
-              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <ChevronRight className="w-5 h-5 text-foreground/60" />
-              </div>
-            </Link>
-          ))}
+          {topCategories.map((cat, i) => {
+            const colors = ['from-pink-500/10', 'from-blue-500/10', 'from-purple-500/10', 'from-orange-500/10'];
+            return (
+              <Link
+                key={cat.id}
+                to={`/explore?category=${cat.id}`}
+                className={cn(
+                  "group relative p-8 rounded-3xl glass overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
+                  "bg-gradient-to-br to-transparent",
+                  colors[i % colors.length]
+                )}
+              >
+                <div className="text-4xl mb-4">{cat.emoji || '✨'}</div>
+                <h3 className="text-xl font-bold text-foreground mb-1">{cat.title}</h3>
+                <p className="text-foreground/40 text-sm">{cat.total_orders || 0} orders</p>
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ChevronRight className="w-5 h-5 text-foreground/60" />
+                </div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary/0 via-primary/20 to-primary/0 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 -z-10" />
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -448,18 +448,18 @@ const Home = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.05 }}
-              className="group relative aspect-square glass rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer"
+              className="group relative aspect-square glass rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-foreground/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
-              <img 
-                src={sticker.image_path} 
+              <img
+                src={sticker.image_path}
                 alt={sticker.title}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 referrerPolicy="no-referrer"
               />
-              
+
               {/* Overlay */}
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 flex flex-col justify-end p-3 backdrop-blur-[2px]">
+              <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 flex flex-col justify-end p-3 backdrop-blur-[2px]">
                 <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                   <p className="text-[10px] font-bold text-white truncate mb-1">{sticker.title}</p>
                   <div className="flex items-center justify-between">
@@ -470,7 +470,7 @@ const Home = () => {
               </div>
 
               {/* Glow effect on hover */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary/0 via-primary/30 to-primary/0 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 -z-10" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary/0 via-primary/40 to-primary/0 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 -z-10" />
             </motion.div>
           ))}
         </div>
@@ -494,8 +494,8 @@ const Home = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: i * 0.1 }}
               className={cn(
-                "relative p-10 rounded-[40px] glass overflow-hidden group transition-all duration-500 hover:translate-y-[-8px]",
-                pack.popular ? "border-primary/40 ring-1 ring-primary/20" : "hover:border-foreground/20"
+                "relative p-10 rounded-[40px] glass overflow-hidden group transition-all duration-500 hover:translate-y-[-8px] hover:shadow-2xl",
+                pack.popular ? "border-primary/40 ring-1 ring-primary/20 shadow-xl" : "hover:border-foreground/20 shadow-lg"
               )}
             >
               {pack.popular && (
@@ -539,9 +539,9 @@ const Home = () => {
               <Link to={pack.color === 'pink' ? "/mega-builder" : "/explore"}>
                 <button className={cn(
                   "w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-300",
-                  pack.color === 'pink' 
-                    ? "bg-primary text-primary-foreground hover:scale-[1.02] neon-pink-glow active:scale-95" 
-                    : "bg-foreground/5 text-foreground hover:bg-foreground/10 border border-border active:scale-95"
+                  pack.color === 'pink'
+                    ? "bg-primary text-primary-foreground hover:scale-[1.02] hover:shadow-2xl neon-pink-glow active:scale-95"
+                    : "bg-foreground/5 text-foreground hover:bg-foreground/10 hover:shadow-xl border border-border active:scale-95"
                 )}>
                   Get Started Now
                 </button>
@@ -698,9 +698,9 @@ const Explore = ({ user }: { user: User | null }) => {
             {cart.length > 0 && (
               <div className="flex items-center gap-4 w-full sm:w-auto">
                 <div className="flex-1 sm:flex-none">
-                  <button 
+                  <button
                     onClick={handleCheckout}
-                    className="w-full bg-foreground text-background px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 animate-bounce whitespace-nowrap"
+                    className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 animate-bounce hover:scale-105 hover:shadow-2xl active:scale-95 transition-all whitespace-nowrap neon-pink-glow"
                   >
                     Order Pack ({cart.length})
                   </button>
@@ -721,23 +721,23 @@ const Explore = ({ user }: { user: User | null }) => {
 
           <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 sm:gap-6">
             {stickers.map(sticker => (
-              <div key={sticker.id} className="group bg-foreground/5 border border-border rounded-2xl sm:rounded-3xl p-2 sm:p-3 hover:bg-foreground/[0.08] transition-all">
+              <div key={sticker.id} className="group bg-foreground/5 border border-border rounded-2xl sm:rounded-3xl p-2 sm:p-3 hover:bg-foreground/[0.08] hover:shadow-xl hover:scale-[1.02] transition-all">
                 <div className="aspect-square bg-foreground/5 rounded-xl sm:rounded-2xl overflow-hidden mb-2 sm:mb-4 relative">
-                   <img 
-                    src={sticker.image_path} 
+                   <img
+                    src={sticker.image_path}
                     alt={sticker.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10 rotate-[-45deg]">
                     <span className="text-foreground font-black text-2xl tracking-tighter select-none">VIBE</span>
                   </div>
                   <div className="absolute top-2 right-2">
-                    <button 
+                    <button
                       onClick={() => toggleCart(sticker.id)}
                       className={cn(
                         "w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all",
-                        cart.includes(sticker.id) ? "bg-primary text-primary-foreground" : "bg-background text-foreground hover:scale-110"
+                        cart.includes(sticker.id) ? "bg-primary text-primary-foreground shadow-primary/50" : "bg-background text-foreground hover:scale-110 hover:shadow-xl"
                       )}
                     >
                       {cart.includes(sticker.id) ? <CheckCircle className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
@@ -795,22 +795,22 @@ const MegaPackBuilder = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
-      <div className="bg-zinc-900 rounded-[40px] p-8 md:p-12 text-white mb-12 flex flex-col md:flex-row justify-between items-center gap-8">
+      <div className="bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 rounded-[40px] p-8 md:p-12 text-white mb-12 flex flex-col md:flex-row justify-between items-center gap-8 shadow-2xl">
         <div className="space-y-4">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tighter">Mega Pack Builder</h1>
-          <p className="text-zinc-400 max-w-md">Select between 20 and 50 unique designs. Each will be printed 5 times (up to 250 total). Become a campus reseller today.</p>
+          <p className="text-zinc-300 max-w-md">Select between 20 and 50 unique designs. Each will be printed 5 times (up to 250 total). Become a campus reseller today.</p>
         </div>
-        <div className="bg-white/10 backdrop-blur-xl p-8 rounded-3xl text-center min-w-[200px]">
-          <div className="text-5xl font-bold mb-2">{selected.length} <span className="text-xl text-zinc-500">/ 50</span></div>
-          <p className="text-sm text-zinc-400 mb-6">Designs Selected (Min: 20)</p>
-          <button 
+        <div className="bg-white/10 backdrop-blur-xl p-8 rounded-3xl text-center min-w-[200px] shadow-xl border border-white/10">
+          <div className="text-5xl font-bold mb-2">{selected.length} <span className="text-xl text-zinc-400">/ 50</span></div>
+          <p className="text-sm text-zinc-300 mb-6">Designs Selected (Min: 20)</p>
+          <button
             disabled={selected.length < 20 || selected.length > 50}
             onClick={() => navigate('/checkout', { state: { stickerIds: selected, packageType: 'mega' } })}
-            className="w-full bg-white text-zinc-900 py-3 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-100 transition-colors"
+            className="w-full bg-white text-zinc-900 py-3 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-100 hover:scale-[1.02] hover:shadow-xl active:scale-95 transition-all"
           >
             Order Mega Pack
           </button>
-          <p className="mt-4 text-xs font-bold text-zinc-500">TOTAL: 2,500 ETB</p>
+          <p className="mt-4 text-xs font-bold text-zinc-400">TOTAL: 2,500 ETB</p>
         </div>
       </div>
 
@@ -859,21 +859,21 @@ const MegaPackBuilder = () => {
 
           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
             {filteredStickers.map(sticker => (
-              <div 
-                key={sticker.id} 
+              <div
+                key={sticker.id}
                 onClick={() => toggleSelect(sticker.id)}
                 className={cn(
                   "cursor-pointer group relative aspect-square rounded-xl sm:rounded-2xl overflow-hidden border-2 sm:border-4 transition-all",
-                  selected.includes(sticker.id) ? "border-zinc-900 shadow-2xl scale-95" : "border-transparent opacity-70 hover:opacity-100"
+                  selected.includes(sticker.id) ? "border-zinc-900 shadow-2xl scale-95" : "border-transparent opacity-70 hover:opacity-100 hover:scale-[1.02] hover:shadow-xl"
                 )}
               >
-                <img src={sticker.image_path} alt={sticker.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <img src={sticker.image_path} alt={sticker.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" referrerPolicy="no-referrer" />
                 {selected.includes(sticker.id) && (
-                  <div className="absolute inset-0 bg-zinc-900/40 flex items-center justify-center">
-                    <CheckCircle className="w-10 h-10 text-white" />
+                  <div className="absolute inset-0 bg-zinc-900/50 flex items-center justify-center backdrop-blur-sm">
+                    <CheckCircle className="w-10 h-10 text-white drop-shadow-lg" />
                   </div>
                 )}
-                <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
+                <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
                   <p className="text-[10px] font-bold text-white truncate">{sticker.title}</p>
                 </div>
               </div>
@@ -1201,6 +1201,15 @@ const Dashboard = ({ user }: { user: User | null }) => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    // Handle smooth scroll to referrals section if hash is present
+    if (window.location.hash === '#referrals') {
+      setTimeout(() => {
+        document.getElementById('referrals')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, []);
+
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
   const handleCancelOrder = async (orderId: string) => {
@@ -1293,21 +1302,21 @@ const Dashboard = ({ user }: { user: User | null }) => {
           <p className="text-foreground/60">Manage your orders and referrals</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
-          <div className="bg-foreground/5 border border-border px-6 py-3 rounded-2xl">
+          <div className="bg-foreground/5 border border-border px-6 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all">
             <p className="text-xs font-bold text-foreground/40 uppercase tracking-widest">Store Credit</p>
             <p className="text-xl font-bold text-foreground">{user.store_credit} ETB</p>
           </div>
-          <div className="bg-foreground/5 border border-border px-6 py-3 rounded-2xl">
+          <div className="bg-foreground/5 border border-border px-6 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all">
             <p className="text-xs font-bold text-foreground/40 uppercase tracking-widest">Ads Balance</p>
             <p className="text-xl font-bold text-foreground">{user.ads_balance || 0} ETB</p>
           </div>
-          <div className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl shadow-lg neon-pink-glow">
-            <p className="text-xs font-bold text-primary-foreground/40 uppercase tracking-widest">Role</p>
+          <div className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl shadow-xl neon-pink-glow">
+            <p className="text-xs font-bold text-primary-foreground/60 uppercase tracking-widest">Role</p>
             <p className="text-xl font-bold capitalize">{user.role}</p>
           </div>
-          <button 
+          <button
             onClick={() => setNotification({ message: 'To top up your ads balance, please contact our support at esuyalew.workneh@aastustudent.edu.et with your user email and the amount you wish to add.', type: 'success' })}
-            className="bg-foreground/5 border border-border text-foreground px-6 py-4 rounded-2xl font-bold hover:bg-foreground/10 transition-all flex items-center gap-2"
+            className="bg-foreground/5 border border-border text-foreground px-6 py-4 rounded-2xl font-bold hover:bg-foreground/10 hover:scale-[1.02] hover:shadow-xl active:scale-95 transition-all flex items-center gap-2"
           >
             <Zap className="w-5 h-5" />
             Top up Ads
@@ -1434,22 +1443,33 @@ const Dashboard = ({ user }: { user: User | null }) => {
 
             <hr className="border-white/10" />
 
-            <h3 className="text-xl font-bold text-white">Referral Program</h3>
-            <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
-              <p className="text-xs font-bold text-white/40 uppercase mb-1">Your Code</p>
-              <div className="flex justify-between items-center">
-                <span className="text-2xl font-mono font-bold tracking-tighter text-white">{user.referral_code}</span>
-                <button 
+            <div id="referrals" className="scroll-mt-24">
+              <h3 className="text-xl font-bold text-white mb-4">Referral Program</h3>
+              <div className="p-6 bg-gradient-to-br from-primary/20 via-accent-blue/10 to-transparent rounded-2xl border border-primary/20 shadow-lg">
+                <p className="text-xs font-bold text-white/60 uppercase mb-2">Your Referral Code</p>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-3xl font-mono font-bold tracking-tighter text-white">{user.referral_code}</span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(user.referral_code);
+                      setNotification({ message: 'Code copied to clipboard!', type: 'success' });
+                    }}
+                    className="p-2 bg-white/10 text-white/60 hover:text-white hover:bg-white/20 rounded-lg transition-all"
+                    title="Copy Code"
+                  >
+                    <Copy className="w-5 h-5" />
+                  </button>
+                </div>
+                <button
                   onClick={() => {
-                    const promo = settings?.referral_promo_message || "Hey! Join VibeStickers and carry the vibe. Use my referral code: {code} and get started at {url}. Let's make our campus colorful!";
-                    const url = settings?.site_url || window.location.origin;
-                    const shareText = promo.replace('{code}', user.referral_code).replace('{url}', url);
+                    const shareText = `Join me on VibeStickers and let's make our campus colorful! Use my code: ${user.referral_code} to get started. Order your first pack and carry the vibe wherever you go! 🎨 ${window.location.origin}`;
                     navigator.clipboard.writeText(shareText);
-                    setNotification({ message: 'Referral message copied to clipboard!', type: 'success' });
+                    setNotification({ message: 'Share message copied to clipboard!', type: 'success' });
                   }}
-                  className="text-white/40 hover:text-white transition-colors"
+                  className="w-full bg-gradient-to-r from-primary to-accent-blue text-white py-4 rounded-xl font-bold hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl neon-pink-glow"
                 >
                   <Send className="w-5 h-5" />
+                  Share Referral Link
                 </button>
               </div>
             </div>
@@ -2002,6 +2022,8 @@ const Admin = ({ currentUser }: { currentUser: User | null }) => {
 
   // Form states
   const [newCat, setNewCat] = useState('');
+  const [newCatEmoji, setNewCatEmoji] = useState('');
+  const [editingCategory, setEditingCategory] = useState<any>(null);
   const [newAd, setNewAd] = useState({ title: '', video_url: '', destination_url: '' });
   const [adFile, setAdFile] = useState<File | null>(null);
   const [newSticker, setNewSticker] = useState({
@@ -2193,9 +2215,13 @@ const Admin = ({ currentUser }: { currentUser: User | null }) => {
       await apiFetch('/api/admin/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newCat })
+        body: JSON.stringify({
+          title: newCat,
+          emoji: newCatEmoji || '✨'
+        })
       });
       setNewCat('');
+      setNewCatEmoji('');
       fetchData();
     } catch (err: any) {
       alert(err.message || 'Failed to add category');
@@ -2238,6 +2264,23 @@ const Admin = ({ currentUser }: { currentUser: User | null }) => {
       fetchData();
     } catch (err: any) {
       alert(err.message || 'Failed to delete category');
+    }
+  };
+
+  const handleUpdateCategory = async (id: any, title: string, emoji: string) => {
+    try {
+      await apiFetch(`/api/admin/categories/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          emoji: emoji || '✨'
+        })
+      });
+      setEditingCategory(null);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to update category');
     }
   };
 
@@ -2394,13 +2437,20 @@ const Admin = ({ currentUser }: { currentUser: User | null }) => {
           <div className="bg-white/5 border border-white/10 backdrop-blur-xl p-8 rounded-[32px] space-y-6">
             <h3 className="text-xl font-bold text-white">Add New Category</h3>
             <form onSubmit={handleAddCategory} className="space-y-4">
-              <input 
-                type="text" 
-                placeholder="Category Title" 
+              <input
+                type="text"
+                placeholder="Category Title"
                 className="w-full px-6 py-4 bg-white/5 rounded-2xl outline-none focus:ring-2 focus:ring-primary border border-white/10 text-white"
                 value={newCat}
                 onChange={e => setNewCat(e.target.value)}
                 required
+              />
+              <input
+                type="text"
+                placeholder="Enter emoji (e.g., ✨)"
+                className="w-full px-6 py-4 bg-white/5 rounded-2xl outline-none focus:ring-2 focus:ring-primary border border-white/10 text-white"
+                value={newCatEmoji}
+                onChange={e => setNewCatEmoji(e.target.value)}
               />
               <button className="w-full bg-primary text-white py-4 rounded-2xl font-bold neon-pink-glow">Create Category</button>
             </form>
@@ -2410,6 +2460,7 @@ const Admin = ({ currentUser }: { currentUser: User | null }) => {
               <thead className="bg-white/5 border-b border-white/10">
                 <tr>
                   <th className="p-6 text-xs font-bold text-white/40 uppercase">ID</th>
+                  <th className="p-6 text-xs font-bold text-white/40 uppercase">Emoji</th>
                   <th className="p-6 text-xs font-bold text-white/40 uppercase">Title</th>
                   <th className="p-6 text-xs font-bold text-white/40 uppercase">Actions</th>
                 </tr>
@@ -2418,9 +2469,64 @@ const Admin = ({ currentUser }: { currentUser: User | null }) => {
                 {categories.map(cat => (
                   <tr key={cat.id} className="hover:bg-white/5 transition-colors">
                     <td className="p-6 font-mono text-xs text-white/60">{cat.id}</td>
-                    <td className="p-6 font-bold text-white">{cat.title}</td>
+                    <td className="p-6 text-2xl">
+                      {editingCategory?.id === cat.id ? (
+                        <input
+                          type="text"
+                          className="w-16 px-2 py-1 bg-white/10 rounded outline-none focus:ring-2 focus:ring-primary border border-white/10 text-white text-center"
+                          value={editingCategory.emoji}
+                          onChange={e => setEditingCategory({...editingCategory, emoji: e.target.value})}
+                        />
+                      ) : (
+                        cat.emoji || '✨'
+                      )}
+                    </td>
+                    <td className="p-6 font-bold text-white">
+                      {editingCategory?.id === cat.id ? (
+                        <input
+                          type="text"
+                          className="w-full px-4 py-2 bg-white/10 rounded-xl outline-none focus:ring-2 focus:ring-primary border border-white/10 text-white"
+                          value={editingCategory.title}
+                          onChange={e => setEditingCategory({...editingCategory, title: e.target.value})}
+                        />
+                      ) : (
+                        cat.title
+                      )}
+                    </td>
                     <td className="p-6">
-                      <button onClick={() => deleteCategory(cat.id)} className="text-rose-500 font-bold text-xs hover:text-rose-400 transition-colors">Delete</button>
+                      <div className="flex gap-2">
+                        {editingCategory?.id === cat.id ? (
+                          <>
+                            <button
+                              onClick={() => handleUpdateCategory(cat.id, editingCategory.title, editingCategory.emoji)}
+                              className="text-emerald-500 font-bold text-xs hover:text-emerald-400 transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingCategory(null)}
+                              className="text-amber-500 font-bold text-xs hover:text-amber-400 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => setEditingCategory({ id: cat.id, title: cat.title, emoji: cat.emoji || '✨' })}
+                              className="text-blue-500 font-bold text-xs hover:text-blue-400 transition-colors"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => deleteCategory(cat.id)}
+                              className="text-rose-500 font-bold text-xs hover:text-rose-400 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -3656,7 +3762,7 @@ export default function App() {
   if (loading) return (
     <div className="h-screen flex items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
-        <Sparkles className="w-12 h-12 text-primary animate-pulse" />
+        <img src="https://res.cloudinary.com/dd4fid5mp/image/upload/v1772727101/Gemini_Generated_Image_hwbqv2hwbqv2hwbq_mgdd19.png" className="w-12 h-12 animate-pulse" alt="" />
         <span className="font-bold text-2xl tracking-tighter text-foreground">VSTICKER...</span>
       </div>
     </div>
@@ -3687,8 +3793,8 @@ export default function App() {
             <div className="grid md:grid-cols-4 gap-12 mb-16">
               <div className="col-span-2">
                 <Link to="/" className="flex items-center gap-2 mb-6">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                    <Sparkles className="h-4 w-4 text-primary-foreground" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary overflow-hidden">
+                    <img src="https://res.cloudinary.com/dd4fid5mp/image/upload/v1772727101/Gemini_Generated_Image_hwbqv2hwbqv2hwbq_mgdd19.png" className="w-full h-full object-cover" alt="" />
                   </div>
                   <span className="text-xl font-bold tracking-tight text-foreground">Vibe Stickers</span>
                 </Link>

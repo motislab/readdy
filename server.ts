@@ -322,6 +322,18 @@ async function startServer() {
     res.json(categories);
   });
 
+  app.get('/api/categories/top', (req, res) => {
+    const topCategories = db.prepare(`
+      SELECT c.id, c.title, c.emoji, SUM(s.orders_count) as total_orders
+      FROM categories c
+      LEFT JOIN stickers s ON c.id = s.category_id
+      GROUP BY c.id
+      ORDER BY total_orders DESC
+      LIMIT 4
+    `).all();
+    res.json(topCategories);
+  });
+
   app.get('/api/stickers/:id', (req, res) => {
     db.prepare('UPDATE stickers SET views = views + 1 WHERE id = ?').run(req.params.id);
     const sticker = db.prepare('SELECT s.*, c.title as category_title FROM stickers s LEFT JOIN categories c ON s.category_id = c.id WHERE s.id = ?').get(req.params.id);
@@ -715,8 +727,14 @@ async function startServer() {
   });
 
   app.post('/api/admin/categories', authenticate, isAdmin, (req, res) => {
-    const { title } = req.body;
-    db.prepare('INSERT INTO categories (title) VALUES (?)').run(title);
+    const { title, emoji } = req.body;
+    db.prepare('INSERT INTO categories (title, emoji) VALUES (?, ?)').run(title, emoji || '✨');
+    res.json({ success: true });
+  });
+
+  app.put('/api/admin/categories/:id', authenticate, isAdmin, (req, res) => {
+    const { title, emoji } = req.body;
+    db.prepare('UPDATE categories SET title = ?, emoji = ? WHERE id = ?').run(title, emoji || '✨', req.params.id);
     res.json({ success: true });
   });
 
