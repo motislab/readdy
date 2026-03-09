@@ -1,46 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
-import { 
-  ShoppingBag, 
-  User, 
-  LayoutDashboard, 
-  Search, 
-  Filter, 
-  Package, 
-  Zap, 
-  CreditCard, 
-  CheckCircle, 
-  Clock, 
-  XCircle,
-  Menu,
-  X,
-  ChevronRight,
-  Plus,
-  Minus,
-  Upload,
-  BarChart3,
-  Users,
-  Settings,
-  LogOut,
-  Home as HomeIcon,
-  Info,
-  Send,
-  DollarSign,
-  ChevronUp,
-  ChevronDown,
-  Copy,
-  Sparkles,
-  LayoutGrid,
-  List,
-  RefreshCw,
-  MapPin,
-  EyeOff,
-  Eye,
-  Trash2,
-  Navigation,
-  Sun,
-  Moon
-} from 'lucide-react';
+import { ShoppingBag, User, LayoutDashboard, Search, ListFilter as Filter, Package, Zap, CreditCard, CircleCheck as CheckCircle, Clock, Circle as XCircle, Menu, X, ChevronRight, Plus, Minus, Upload, ChartBar as BarChart3, Users, Settings, LogOut, Hop as HomeIcon, Info, Send, DollarSign, ChevronUp, ChevronDown, Copy, Sparkles, LayoutGrid, List, RefreshCw, MapPin, EyeOff, Eye, Trash2, Navigation, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 
